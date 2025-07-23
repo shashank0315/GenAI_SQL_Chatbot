@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GenAI E-commerce Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(145deg, #3005f0, #467ce9);
+    }
+
+    .container {
+  background: linear-gradient(145deg, #e55a0a, #b1e92d);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(163, 162, 162, 0.4);
+  max-width: 740px;
+  margin: 48px auto;
+  padding: 40px 36px 36px 36px;
+  border: 1px solid rgba(220, 218, 224, 0.1);
+}
+
+.card {
+  background: linear-gradient(145deg, #7076e6, #d03eae);
+  border: 1px solid rgba(54, 27, 202, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(144, 144, 144, 0.4);
+  padding: 22px 24px 28px 24px;
+  margin-top: 28px;
+  color: #f1f1f1;
+}
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 18px;
+      margin-top: 40px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #500de1 0%, #d91bd3 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 2.1rem;
+      font-weight: bold;
+      box-shadow: 0 2px 12px #a4508b44;
+    }
+
+    h2.heading {
+      margin: 0;
+      font-weight: 900;
+      font-size: 2.3rem;
+      letter-spacing: 2px;
+      color: #ffffff;
+      text-shadow: 0 2px 16px #00000033;
+    }
+
+    label.input-label {
+      display: block;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+      font-size: 1.13rem;
+      letter-spacing: 1.1px;
+      text-shadow: 0 0 6px #000;
+    }
+
+    input, button {
+      font-size: 1.13rem;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input {
+      background: rgba(255, 255, 255, 0.07);
+      color: #ffffff;
+      font-weight: 600;
+      border: 1.5px solid #ffffff33;
+    }
+
+    input::placeholder {
+      color: #ddd;
+    }
+
+    input:focus {
+      outline: none;
+      border: 1.5px solid #43e97b;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    button {
+      background: linear-gradient(135deg, #43e97b, #38f9d7);
+      color: #111;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 2px 8px #38f9d766;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #38f9d7, #43e97b);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #ffffff;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    #sqlBox {
+      margin-bottom: 12px;
+      font-size: 1.08rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-radius: 10px;
+      padding: 18px 16px;
+      min-height: 80px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+    }
+
+    #answerBox {
+      font-weight: 700;
+      color: #fefefe;
+      margin-bottom: 12px;
+      font-size: 1.13rem;
+      text-shadow: 0 1px 8px #2575fc22;
+    }
+
+    #chart {
+      margin-top: 22px;
+      max-width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      padding: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <div class="logo-icon">🛒</div>
+      <h2 class="heading">Anarix E-commerce Insights</h2>
+    </div>
+
+    <label for="questionInput" class="input-label">Ask Your Question</label>
+    <input id="questionInput" type="text" placeholder="e.g. Which product had the highest CPC?" />
+    <button onclick="askQuestion()">Get Answer & Visualize</button>
+
+    <div class="card">
+      <h3>Generated SQL:</h3>
+      <div id="sqlBox"></div>
+
+      <h3>Answer:</h3>
+      <div id="answerBox"></div>
+
+      <canvas id="chart" width="600" height="320"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let chart;
+    const palette = [
+      '#6a11cb', '#2575fc', '#a4508b', '#43e97b', '#38f9d7',
+      '#fbc2eb', '#e3eeff', '#f3e7fa', '#fdcbf1', '#fa709a', '#fee140', '#f6d365', '#fda085'
+    ];
+
+    async function askQuestion() {
+      const question = document.getElementById('questionInput').value;
+      const response = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await response.json();
+      document.getElementById('sqlBox').innerText = data.sql || 'No SQL generated';
+      document.getElementById('answerBox').innerText = data.answer || 'No answer returned';
+
+      if (data.chart && Array.isArray(data.chart.x) && data.chart.x.length > 0) {
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('chart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: data.chart.type || 'bar',
+          data: {
+            labels: data.chart.x,
+            datasets: [{
+              label: data.chart.label || '',
+              data: data.chart.y,
+              backgroundColor: palette[0],
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            plugins: {
+              legend: { display: true },
+              tooltip: { enabled: true }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#e0e0e0' },
+                ticks: { color: '#ffffff', font: { weight: 'bold' } }
+              },
+              x: {
+                grid: { color: '#e0e0e0' },
+                ticks: { color: '#ffffff', font: { weight: 'bold' } }
+              }
+            }
+          }
+        });
+      } else if (Array.isArray(data.result) && data.result.length > 1) {
+        const keys = Object.keys(data.result[0]);
+        const x = data.result.map(row => row[keys[0]]);
+        const y = data.result.map(row => row[keys[1]]);
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('chart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: x,
+            datasets: [{
+              label: keys[1],
+              data: y,
+              backgroundColor: palette[1],
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            plugins: {
+              legend: { display: true },
+              tooltip: { enabled: true }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: '#e0e0e0' },
+                ticks: { color: '#ffffff', font: { weight: 'bold' } }
+              },
+              x: {
+                grid: { color: '#e0e0e0' },
+                ticks: { color: '#ffffff', font: { weight: 'bold' } }
+              }
+            }
+          }
+        });
+      } else {
+        if (chart) chart.destroy();
+      }
+    }
+  </script>
+</body>
+</html>
